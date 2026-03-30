@@ -1,0 +1,17 @@
+{
+  "v1": {
+    "success": false,
+    "status": "error",
+    "msg": "Network error occurred"
+  },
+  "v2": {
+    "success": false,
+    "status": "error",
+    "msg": "Network error occurred"
+  },
+  "v3": {
+    "success": false,
+    "status": "error",
+    "msg": "Request failed with status code 404"
+  }
+}
