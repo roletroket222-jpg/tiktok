@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes === 0) return '';
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(1)} MB`;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -31,25 +37,49 @@ export async function POST(req: Request) {
     const data = await result.json();
 
     if (data.code === 0 && data.data) {
-      // Format data to match what the frontend expects
+      const d = data.data;
+
+      // Build quality options — only include ones that have a valid URL
+      const videoQualities: { label: string; url: string; size: string }[] = [];
+
+      if (d.hdplay) {
+        videoQualities.push({
+          label: 'HD',
+          url: d.hdplay,
+          size: formatBytes(d.hd_size),
+        });
+      }
+      if (d.play) {
+        videoQualities.push({
+          label: 'Normal (No Watermark)',
+          url: d.play,
+          size: formatBytes(d.size),
+        });
+      }
+      if (d.wmplay) {
+        videoQualities.push({
+          label: 'With Watermark',
+          url: d.wmplay,
+          size: formatBytes(d.wm_size),
+        });
+      }
+
       const mappedData = {
-        id: data.data.id || '',
-        title: data.data.title || '',
-        cover: [data.data.cover || ''],
-        video: [data.data.hdplay || data.data.play || ''],
-        music: [data.data.music || ''],
+        id: d.id || '',
+        title: d.title || '',
+        cover: d.cover || '',
+        duration: d.duration || 0,
+        videoQualities,
+        musicUrl: d.music || '',
         author: {
-          nickname: data.data.author?.nickname || 'Unknown',
-          avatar: [data.data.author?.avatar || '']
-        }
+          nickname: d.author?.nickname || 'Unknown',
+          avatar: d.author?.avatar || '',
+        },
       };
 
-      return NextResponse.json({
-        success: true,
-        data: mappedData
-      }, { status: 200 });
+      return NextResponse.json({ success: true, data: mappedData }, { status: 200 });
     } else {
-      return NextResponse.json({ error: data.msg || 'Failed to find video data from main API' }, { status: 500 });
+      return NextResponse.json({ error: data.msg || 'Failed to find video data' }, { status: 500 });
     }
 
   } catch (err: any) {
